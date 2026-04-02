@@ -57,7 +57,7 @@ export class UsersService extends PrismaGenericService<
 
   async findById(id: string): Promise<UserResponseDto | null> {
     const user: User | null = await super.findOne({
-      where: { id: id, deletedAt: null },
+      where: { id },
       select: userSelectWithoutPassword,
     });
     return user ? this.toResponseDto(user) : null;
