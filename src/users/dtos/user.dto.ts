@@ -1,30 +1,27 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { User } from '@prisma/client';
+import { Transform } from 'class-transformer';
 import {
+  IsEmail,
+  IsNotEmpty,
   IsString,
   Matches,
-  MinLength,
   MaxLength,
-  IsNotEmpty,
-  IsEmail,
+  MinLength,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
 
-export class BaseUserDto {
-  /**
-   * @example 'P@ssw0rd!'
-   * @description The password for the user. Must meet the following criteria:
-   * - Must be a string.
-   * - Must be between 8 and 20 characters long.
-   * - Must contain at least one uppercase letter.
-   * - Must contain at least one lowercase letter.
-   * - Must contain at least one number.
-   * - Must contain at least one special character (e.g., !@#$%^&*).
-   */
+type UserWithoutId = Omit<
+  User,
+  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'name'
+>;
+
+export class UserDto implements UserWithoutId {
   @ApiProperty({
     description: `The password for the user. Must contain at least 8 characters, one uppercase letter, 
-        one lowercase letter, one number, and one special character.`,
+          one lowercase letter, one number, and one special character.`,
     example: 'P@ssw0rd!',
   })
+  @IsNotEmpty({ message: 'Password is required' })
   @IsString({ message: 'Password must be a string' })
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @MaxLength(20, { message: 'Password must not exceed 20 characters' })
@@ -38,19 +35,15 @@ export class BaseUserDto {
   @Matches(/(?=.*\W)/, {
     message: 'Password must contain at least one special character',
   })
-  @IsNotEmpty({ message: 'Password is required' })
   password: string;
 
-  /**
-   * @example 'hello@domain.com'
-   * @description The email address of the user. Must be a valid email format.
-   */
   @ApiProperty({
     example: 'hello@domain.com',
     description: 'Email of the user',
   })
-  @Expose()
   @IsNotEmpty({ message: 'Email is required' })
+  @IsString({ message: 'Email must be a string' })
   @IsEmail({}, { message: 'Invalid email format' })
+  @Transform(({ value }) => value?.toLowerCase().trim())
   email: string;
 }
