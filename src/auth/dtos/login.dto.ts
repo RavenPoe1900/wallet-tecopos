@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { User } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
@@ -10,12 +9,7 @@ import {
   MinLength,
 } from 'class-validator';
 
-type UserWithoutId = Omit<
-  User,
-  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'name' | 'role'
->;
-
-export class UserDto implements UserWithoutId {
+export class LoginDto {
   @ApiProperty({
     description: `The password for the user. Must contain at least 8 characters, one uppercase letter, 
           one lowercase letter, one number, and one special character.`,

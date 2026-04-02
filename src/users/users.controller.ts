@@ -27,6 +27,8 @@ import {
 import { PaginatedResponse } from 'common/dtos/paginationResponse.dto';
 import { GenericApplicationCrudServicePort } from 'common/generic/generic-application-crud.service.port';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 
 @ApiTags('Users')
 @Controller({ path: 'users', version: '1' })
@@ -39,6 +41,7 @@ export class UsersController implements GenericApplicationCrudServicePort<
   constructor(private readonly service: UsersService) {}
 
   @Post()
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiResponseSwagger(createSwagger(UserResponseDto, 'Users'))
   create(@Body() dto: UserDto): Promise<UserResponseDto> {
@@ -46,6 +49,7 @@ export class UsersController implements GenericApplicationCrudServicePort<
   }
 
   @Get()
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiResponseSwagger(findSwagger(UserResponseDto, 'Users'))
   findAll(
@@ -55,6 +59,7 @@ export class UsersController implements GenericApplicationCrudServicePort<
   }
 
   @Get(':id')
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiResponseSwagger(findOneSwagger(UserResponseDto, 'Users'))
   findOne(@Param('id') id: string): Promise<UserResponseDto | null> {
@@ -62,6 +67,7 @@ export class UsersController implements GenericApplicationCrudServicePort<
   }
 
   @Patch(':id')
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiResponseSwagger(updateSwagger(UserResponseDto, 'Users'))
   update(
@@ -72,6 +78,7 @@ export class UsersController implements GenericApplicationCrudServicePort<
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiResponseSwagger(deleteSwagger(UserResponseDto, 'Users'))
   remove(@Param('id') id: string): Promise<UserResponseDto> {
