@@ -1,1 +1,3 @@
-export const MODULES = [];
+import { UsersModule } from 'src/users/users.module';
+
+export const MODULES = [UsersModule];
