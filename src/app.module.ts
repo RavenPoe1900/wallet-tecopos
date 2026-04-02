@@ -3,9 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { MODULES } from 'common/config/config-modules';
 import { jwtConfig } from 'common/config/jwt-config';
-import { PrismaModule } from './prisma/prisma.module';
 import { BullModule } from '@nestjs/bullmq';
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -19,7 +17,6 @@ import { BullModule } from '@nestjs/bullmq';
       },
     }),
     JwtModule.register(jwtConfig),
-    PrismaModule,
     ...MODULES,
   ],
 })
