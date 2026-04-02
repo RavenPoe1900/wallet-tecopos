@@ -19,39 +19,55 @@ enum TransactionStatus {
   FAILED
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
+enum Role {
+  USER
+  ADMIN
+}
 
-  accounts  Account[]
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  role      Role      @default(USER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  accounts Account[]
+
+  @@index([deletedAt])
 }
 
 model Account {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   userId    String
-  balance   Decimal  @default(0)
-  currency  String   @default("USD")
-  createdAt DateTime @default(now())
+  balance   Decimal   @default(0) @db.Decimal(19, 4)
+  currency  String    @default("USD")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  user         User          @relation(fields: [userId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
   @@index([userId])
+  @@index([deletedAt])
 }
 
 model Transaction {
   id          String            @id @default(uuid())
   accountId   String
-  amount      Decimal
+  amount      Decimal           @db.Decimal(19, 4)
   type        TransactionType
   status      TransactionStatus @default(PENDING)
   description String?
   createdAt   DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  deletedAt   DateTime?         
 
-  account Account @relation(fields: [accountId], references: [id])
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId])
   @@index([createdAt])
+  @@index([deletedAt])
 }
