@@ -24,6 +24,13 @@ enum Role {
   ADMIN
 }
 
+enum Currency {
+  USD
+  MN
+}
+
+
+
 model User {
   id        String    @id @default(uuid())
   email     String    @unique
@@ -42,7 +49,7 @@ model Account {
   id        String    @id @default(uuid())
   userId    String
   balance   Decimal   @default(0) @db.Decimal(19, 4)
-  currency  String    @default("USD")
+  currency  Currency  @default(USD)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
