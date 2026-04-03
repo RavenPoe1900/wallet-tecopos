@@ -18,6 +18,9 @@ import { AuthGuard } from './auth/guards/auth.guard';
         port: 6379,
       },
     }),
+    BullModule.registerQueue({
+      name: 'notificationQueues',
+    }),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'default-secret-key',
       global: true,
