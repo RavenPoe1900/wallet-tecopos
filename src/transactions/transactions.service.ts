@@ -5,6 +5,11 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { TransactionResponseDto } from './dtos/transaction-response.dto';
 import { CreateTransactionDto } from './dtos/transaction.dto';
 import { PaginatedResponse } from 'common/dtos/paginationResponse.dto';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { JobEvents } from 'src/queue/enums/events.enum';
+import { QUEUE_CONFIG } from 'src/queue/config/env.config';
+import { WalletTransaction } from 'common/interfaces/wallet-transaction.interface';
 
 @Injectable()
 export class TransactionsService extends PrismaGenericService<
@@ -15,15 +20,32 @@ export class TransactionsService extends PrismaGenericService<
   Prisma.TransactionUpdateArgs,
   Prisma.TransactionDeleteArgs
 > {
-  constructor(prismaService: PrismaService) {
+  constructor(
+    prismaService: PrismaService,
+    @InjectQueue('notificationQueues') private readonly queue: Queue,
+  ) {
     super(prismaService.transaction);
   }
 
   async createOne(dto: CreateTransactionDto): Promise<TransactionResponseDto> {
+    const { walletId, ...data } = dto;
     const args: Prisma.TransactionCreateArgs = {
-      data: dto,
+      data,
     };
     const transaction: Transaction = await super.create(args);
+    const walletTransaction: WalletTransaction = {
+      walletId,
+      id: transaction.id,
+      amount: data.amount,
+      accountId: data.accountId,
+    };
+    await this.queue.add(JobEvents.PROCESS_PAYMENT, walletTransaction, {
+      priority: QUEUE_CONFIG.MIN_PRIORITY,
+      removeOnComplete: true,
+      removeOnFail: false,
+      attempts: 0,
+    });
+
     return this.toResponseDto(transaction);
   }
 
@@ -44,21 +66,21 @@ export class TransactionsService extends PrismaGenericService<
     return transaction ? this.toResponseDto(transaction) : null;
   }
 
-  async updateOne(
-    id: string,
-    data: Prisma.TransactionUpdateInput,
-  ): Promise<TransactionResponseDto> {
-    const updated: Transaction = await super.update(
-      { where: { id } },
-      { where: { id }, data },
-    );
-    return this.toResponseDto(updated);
-  }
+  // async updateOne(
+  //   id: string,
+  //   data: Prisma.TransactionUpdateInput,
+  // ): Promise<TransactionResponseDto> {
+  //   const updated: Transaction = await super.update(
+  //     { where: { id } },
+  //     { where: { id }, data },
+  //   );
+  //   return this.toResponseDto(updated);
+  // }
 
-  async removeOne(id: string): Promise<TransactionResponseDto> {
-    const removed = await super.remove({ where: { id } }, { where: { id } });
-    return this.toResponseDto(removed);
-  }
+  // async removeOne(id: string): Promise<TransactionResponseDto> {
+  //   const removed = await super.remove({ where: { id } }, { where: { id } });
+  //   return this.toResponseDto(removed);
+  // }
 
   toResponseDto(transaction: Transaction): TransactionResponseDto {
     return Object.assign(new TransactionResponseDto(), {

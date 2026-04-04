@@ -1,12 +1,10 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Param,
-  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -17,33 +15,27 @@ import { TransactionsService } from './transactions.service';
 import { ApiResponseSwagger } from 'common/swagger/response.swagger';
 import {
   createSwagger,
-  deleteSwagger,
   findOneSwagger,
   findSwagger,
-  updateSwagger,
 } from 'common/swagger/http.swagger';
 import { PaginatedResponse } from 'common/dtos/paginationResponse.dto';
-import { GenericApplicationCrudServicePort } from 'common/generic/generic-application-crud.service.port';
-import { UpdateTransactionDto } from './dtos/update-transaction.dto';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { CreateTransactionDto } from './dtos/transaction.dto';
+import { ValidateTransactionPipe } from './guards/payment.guard';
 
 @ApiTags('Transactions')
 @Controller({ path: 'transactions', version: '1' })
-export class TransactionsController implements GenericApplicationCrudServicePort<
-  CreateTransactionDto,
-  UpdateTransactionDto,
-  TransactionResponseDto,
-  PaginationTransactionDto
-> {
+export class TransactionsController {
   constructor(private readonly service: TransactionsService) {}
 
   @Post()
   @Roles(Role.USER)
   @HttpCode(HttpStatus.CREATED)
   @ApiResponseSwagger(createSwagger(TransactionResponseDto, 'Transactions'))
-  create(@Body() dto: CreateTransactionDto): Promise<TransactionResponseDto> {
+  create(
+    @Body(ValidateTransactionPipe) dto: CreateTransactionDto,
+  ): Promise<TransactionResponseDto> {
     return this.service.createOne(dto);
   }
 
@@ -65,22 +57,22 @@ export class TransactionsController implements GenericApplicationCrudServicePort
     return this.service.findById(id);
   }
 
-  @Patch(':id')
-  @Roles(Role.USER)
-  @HttpCode(HttpStatus.ACCEPTED)
-  @ApiResponseSwagger(updateSwagger(TransactionResponseDto, 'Transactions'))
-  update(
-    @Param('id') id: string,
-    @Body() dto: UpdateTransactionDto,
-  ): Promise<TransactionResponseDto> {
-    return this.service.updateOne(id, dto);
-  }
+  // @Patch(':id')
+  // @Roles(Role.USER)
+  // @HttpCode(HttpStatus.ACCEPTED)
+  // @ApiResponseSwagger(updateSwagger(TransactionResponseDto, 'Transactions'))
+  // update(
+  //   @Param('id') id: string,
+  //   @Body() dto: UpdateTransactionDto,
+  // ): Promise<TransactionResponseDto> {
+  //   return this.service.updateOne(id, dto);
+  // }
 
-  @Delete(':id')
-  @Roles(Role.USER)
-  @HttpCode(HttpStatus.ACCEPTED)
-  @ApiResponseSwagger(deleteSwagger(TransactionResponseDto, 'Transactions'))
-  remove(@Param('id') id: string): Promise<TransactionResponseDto> {
-    return this.service.removeOne(id);
-  }
+  // @Delete(':id')
+  // @Roles(Role.USER)
+  // @HttpCode(HttpStatus.ACCEPTED)
+  // @ApiResponseSwagger(deleteSwagger(TransactionResponseDto, 'Transactions'))
+  // remove(@Param('id') id: string): Promise<TransactionResponseDto> {
+  //   return this.service.removeOne(id);
+  // }
 }
