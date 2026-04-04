@@ -9,6 +9,11 @@ import { Job, Queue, DelayedError } from 'bullmq';
 import { BrokenCircuitError } from 'cockatiel';
 import { JobEvents } from './enums/events.enum';
 import { QUEUE_CONFIG } from './config/env.config';
+import { ExternalService } from 'src/externals/external.service';
+import { TransactionsService } from 'src/transactions/transactions.service';
+import { WalletTransaction } from 'common/interfaces/wallet-transaction.interface';
+import { Account, Prisma, TransactionStatus } from '@prisma/client';
+import { AccountsService } from 'src/accounts/accounts.service';
 
 @Processor('notificationQueues')
 export class QueueConsumer extends WorkerHost {
@@ -18,12 +23,16 @@ export class QueueConsumer extends WorkerHost {
     @InjectQueue('notificationQueues') private readonly queue: Queue,
     @InjectQueue('resumeQueue') private readonly resumeQueue: Queue,
     @Inject('COCKATIEL_POLICY') private readonly policy,
+    private readonly externalService: ExternalService,
+    private readonly transactionsService: TransactionsService,
+    private readonly accountsService: AccountsService,
   ) {
     super();
   }
 
   async process(job: Job): Promise<any> {
     switch (job.name) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
       case JobEvents.PROCESS_PAYMENT:
         return this.handleProcessPayment(job);
       default:
@@ -32,12 +41,12 @@ export class QueueConsumer extends WorkerHost {
   }
 
   private async handleProcessPayment(job: Job) {
-    const { userId, amount } = job.data;
-
+    const { walletId, id, amount, accountId }: WalletTransaction = job.data;
     try {
       await this.policy.execute(async () => {
-        this.logger.log(`Processing payment → ${userId} $${amount}`);
-        throw new Error('Simulated payment error');
+        this.logger.log(`Processing payment → ${walletId} $${amount}`);
+        await this.externalService.getData(job.data);
+        await this.updateAccountAndTransaction(id, amount, accountId);
       });
     } catch (err) {
       if (err instanceof BrokenCircuitError) {
@@ -45,6 +54,11 @@ export class QueueConsumer extends WorkerHost {
           `Circuit breaker OPEN — failing fast for job id=${job.id}`,
         );
       }
+      const data = { status: TransactionStatus.FAILED };
+      await this.transactionsService.update(
+        { where: { id } },
+        { where: { id }, data },
+      );
 
       await this.pauseAndScheduleResume(job);
 
@@ -78,6 +92,32 @@ export class QueueConsumer extends WorkerHost {
         removeOnComplete: true,
         removeOnFail: true,
       },
+    );
+  }
+
+  private async updateAccountAndTransaction(
+    id: string,
+    amount: string,
+    accountId: string,
+  ): Promise<void> {
+    let data = { status: TransactionStatus.COMPLETED };
+
+    const account: Account = await this.accountsService.findOne({
+      where: { id: accountId },
+    });
+    const accountAmount = parseFloat(String(amount));
+
+    const balance = parseFloat(String(account.balance));
+    if (balance < accountAmount) data = { status: TransactionStatus.COMPLETED };
+    else {
+      const dataBalance: Prisma.AccountUpdateInput = {
+        balance: balance - accountAmount,
+      };
+      await this.accountsService.updateOne(accountId, dataBalance);
+    }
+    await this.transactionsService.update(
+      { where: { id } },
+      { where: { id }, data },
     );
   }
 

@@ -19,6 +19,7 @@ export class ResumeQueueProcessor extends WorkerHost {
 
   async process(job: Job): Promise<void> {
     switch (job.name) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
       case JobEvents.RESUME_QUEUE:
         return this.handleResumeQueue();
       default:
