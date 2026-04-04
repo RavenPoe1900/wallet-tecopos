@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
 import { rateLimitMiddleware } from 'common/rate-limit/rate-limit-middleware';
 import { setupSwagger } from 'common/swagger/setup.swagger';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -27,10 +28,9 @@ async function bootstrap() {
 
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(
-      `Swagger documentation available at http://localhost:${PORT}/api-docs`,
-    );
+    const logger = new Logger('NestRun');
+    logger.log(`🚀 Server running at ${PORT}`);
+    logger.log(`📄 Swagger docs at ${PORT}/api-docs`);
   });
 }
 bootstrap();
