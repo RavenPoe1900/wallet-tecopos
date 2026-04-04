@@ -17,6 +17,7 @@ enum TransactionStatus {
   PENDING
   COMPLETED
   FAILED
+  INSUFFICIENT_FUNDS
 }
 
 enum Role {
@@ -28,7 +29,6 @@ enum Currency {
   USD
   MN
 }
-
 
 
 model User {
@@ -46,14 +46,14 @@ model User {
 }
 
 model Account {
-  id        String    @id @default(uuid())
-  userId    String
-  balance   Decimal   @default(0) @db.Decimal(19, 4)
-  currency  Currency  @default(USD)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
+  id           String    @id @default(uuid())
+  walletId     String    @default(uuid()) @unique
+  userId       String
+  balance      Decimal   @default(0) @db.Decimal(19, 4)
+  currency     Currency  @default(USD)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
@@ -69,7 +69,7 @@ model Transaction {
   status      TransactionStatus @default(PENDING)
   description String?
   createdAt   DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  updatedAt   DateTime          @updatedAt
   deletedAt   DateTime?         
 
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)

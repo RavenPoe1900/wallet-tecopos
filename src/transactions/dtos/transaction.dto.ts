@@ -6,10 +6,16 @@ import {
   IsString,
   IsDecimal,
   MaxLength,
+  IsEmpty,
 } from 'class-validator';
-import { TransactionType } from '@prisma/client';
+import { Transaction, TransactionType } from '@prisma/client';
 
-export class CreateTransactionDto {
+type TransactionWithout = Omit<
+  Transaction,
+  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'status' | 'amount'
+>;
+
+export class CreateTransactionDto implements TransactionWithout {
   @ApiProperty({
     description:
       'Unique identifier of the account associated with the transaction',
@@ -43,5 +49,8 @@ export class CreateTransactionDto {
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  description?: string;
+  description: string;
+
+  @IsEmpty()
+  walletId: string;
 }
